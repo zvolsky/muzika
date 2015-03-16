@@ -1,3 +1,14 @@
+# additional:
+
+.pythonhistory
+
+# additional web2py:
+databases/
+sessions/
+errors/
+private/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
