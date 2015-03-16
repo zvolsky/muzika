@@ -1,17 +1,49 @@
 # -*- coding: utf-8 -*-
 
-@auth.requires_login() 
-def index():
-    return dict(grid=SQLFORM.grid(db.rozpis.auth_user_id==auth.user_id,
-            orderby=db.rozpis.zacatek,
-            showbuttontext=False,
-            headers={
+ROZPIS_HEADERS = {
                 'rozpis.id': 'id',
                 'rozpis.auth_user_id': 'muzikant',
                 'rozpis.misto_id': 'misto',
                 'rozpis.zacatek': 'zacatek',
-            }))
+            }
 
+@auth.requires_login()
+def index():
+    response.view = 'default/rozpis.html'
+    return dict(grid=SQLFORM.grid(db.rozpis.auth_user_id==auth.user_id,
+            orderby=db.rozpis.zacatek,
+            showbuttontext=False,
+            create=False,
+            editable=False,
+            deletable=False,
+            searchable=False,
+            headers=ROZPIS_HEADERS
+            ))
+
+#@auth.requires_membership('rozpis')
+def rozpis():
+    return dict(grid=SQLFORM.grid(db.rozpis,
+            orderby=db.rozpis.zacatek,
+            showbuttontext=False,
+            searchable=False,
+            headers=ROZPIS_HEADERS
+            ))
+
+@auth.requires_membership('admin')
+def mista():
+    response.view = 'default/ciselnik.html'
+    return dict(grid=SQLFORM.grid(db.misto,
+            showbuttontext=False,
+            searchable=False
+            ))
+
+@auth.requires_membership('admin')
+def muzikanti():
+    response.view = 'default/ciselnik.html'
+    return dict(grid=SQLFORM.grid(db.auth_user,
+            showbuttontext=False,
+            searchable=False
+            ))
 
 def user():
     """

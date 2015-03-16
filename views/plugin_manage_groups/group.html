@@ -1,0 +1,41 @@
+{{extend 'layout.html'}}
+
+<h3 class="plugin-manage-groups-h3" id="plugin-manage-groups-h3-1">{{=T("Defined groups")}}</h3>
+<ul id="plugin-manage-groups-groups">
+{{for group in groups:}}
+  {{member_count = member_counts.get(group.id, 0)}}
+  {{qbold1 = XML('<b>') if member_count else ''}}
+  {{qbold2 = XML('</b>') if member_count else ''}}
+  <li class="plugin-manage-groups-group">
+    <a class="plugin-manage-groups-linkgroup" href="{{=URL(args=group.role)}}">{{=qbold1}}{{=group.role}}{{=qbold2}}</a> ({{=member_count}})
+    {{if not member_count:}}
+      - <a class="plugin-manage-groups-delgroup" href="{{=URL('delgroup', args=group.id)}}">{{=T('delete empty group')}}</a>
+    {{pass}}
+  </li>
+{{pass}}
+</ul>
+
+{{if len(groups)>1:}}
+  <p class="plugin-manage-groups-hint">{{=T("Click group name to manage group members.")}}</p>
+{{pass}}
+<p class="plugin-manage-groups-hint">{{=T("To create new group, please navigate to <app>/plugin_manage_groups/group/<new_group_name>.")}}</p>
+
+<h3 class="plugin-manage-groups-h3" id="plugin-manage-groups-h3-2">{{=T("Manage group %s") % request.args[0]}}</h3>
+
+<h4 style="display: inline;" class="plugin-manage-groups-h4" id="plugin-manage-groups-h4-1">{{=T("Members")}}</h4> - click to exclude
+<li>
+{{for user in users:}}
+  {{if user.is_member:}}
+    {{if auth.settings.use_username:}}{{=user.username}}{{pass}} {{=user.email}}
+  {{pass}}
+{{pass}}
+</li>
+
+<h4 style="display: inline;" class="plugin-manage-groups-h4" id="plugin-manage-groups-h4-2">{{=T("Users not in group")}}</h4> - click to include
+<li>
+{{for user in users:}}
+  {{if not user.is_member:}}
+    {{if auth.settings.use_username:}}{{=user.username}}{{pass}} {{=user.email}}
+  {{pass}}
+{{pass}}
+</li>

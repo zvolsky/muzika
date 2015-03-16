@@ -23,8 +23,19 @@ response.google_analytics_id = None
 #########################################################################
 
 response.menu = [
-    (T('Home'), False, URL('default', 'index'), [])
-]
+    (T('Rozpis'), False, URL('default', 'index'), [
+        (T('Můj rozpis'), False, URL('default', 'index'), []),
+        ]),
+    ]
+
+if auth.has_membership('rozpis'):
+    response.menu[0][3].append((T('Celkový rozpis'), False, URL('default', 'rozpis'), []))
+
+if auth.has_membership('admin'):
+    response.menu.append((T('Číselníky'), False, None, [
+        (T('Muzikanti (uživatelé)'), False, URL('default', 'muzikanti'), []),
+        (T('Místa'), False, URL('default', 'mista'), []),
+        ]))
 
 DEVELOPMENT_MENU = True
 
