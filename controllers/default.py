@@ -42,6 +42,7 @@ def muzikanti():
     response.view = 'default/ciselnik.html'
     return dict(grid=SQLFORM.grid(db.auth_user,
             showbuttontext=False,
+            deletable=lambda row: row.id!=auth.user_id,
             searchable=False
             ))
 

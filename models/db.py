@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# mz zmeny:
+#  auth.settings.create_user_groups = None               pridano
+#  auth.define_tables(username=True, signature=False)    -> True
+
+
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too
 ## File is released under public domain and you can use without limitations
@@ -47,8 +52,9 @@ auth = Auth(db)
 service = Service()
 plugins = PluginManager()
 
+auth.settings.create_user_groups = None
 ## create all tables needed by auth if not custom tables
-auth.define_tables(username=False, signature=False)
+auth.define_tables(username=True, signature=False)
 
 ## configure email
 mail = auth.settings.mailer
