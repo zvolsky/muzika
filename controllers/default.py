@@ -20,7 +20,7 @@ def index():
             headers=ROZPIS_HEADERS
             ))
 
-#@auth.requires_membership('rozpis')
+@auth.requires_membership('rozpis')
 def rozpis():
     return dict(grid=SQLFORM.grid(db.rozpis,
             orderby=db.rozpis.zacatek,
