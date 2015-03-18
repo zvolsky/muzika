@@ -33,6 +33,7 @@ if auth.has_membership('rozpis'):
 
 if auth.has_membership('admin'):
     response.menu.append((T('Číselníky'), False, None, [
+        (T('Práva uživatelů'), False, URL('plugin_manage_groups', 'index'), []),
         (T('Muzikanti (uživatelé)'), False, URL('default', 'muzikanti'), []),
         (T('Místa'), False, URL('default', 'mista'), []),
         ]))

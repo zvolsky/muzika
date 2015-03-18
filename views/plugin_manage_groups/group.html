@@ -14,6 +14,7 @@
     <ul class="plugin-manage-groups-ul">
   {{else:}}
     {{li1 = li2 = ''}}
+    <p>
   {{pass}}
   {{for member in members:}}
     {{=li1}}{{if manage_me or member.id!=auth.user_id:}}<a href="{{=URL('delms', args=(group_id, member.id))}}">{{pass}}
@@ -26,6 +27,8 @@
   {{pass}}
   {{if li1:}}
     </ul>
+  {{else:}}
+    </p>
   {{pass}}
 {{else:}}
   <p class="plugin-manage-groups-info">{{=T("No members yet.")}}</p>
@@ -33,6 +36,18 @@
 
 {{if cnt_candidates:}}
   <h4 style="display: inline;" class="plugin-manage-groups-h4" id="plugin-manage-groups-h4-2">{{=T("Add other users")}}</h4>
+  {{if hint:}}
+    <ul class="plugin-manage-groups-ambig-ul">
+    {{=T("Did you mean:")}}
+    {{for hintrow in hint:}}
+      <li class="plugin-manage-groups-ambig-li">
+        <a href="{{=URL('addms', args=(group_id, hintrow.id))}}">
+          {{if auth.settings.use_username:}}{{=hintrow.username}}{{else:}}{{=hintrow.email}}{{pass}}
+        </a>
+      </li>
+    {{pass}}
+  {{pass}}
+  </ul>
   {{if large:}}
     {{=large}}
   {{else:}}
@@ -44,6 +59,7 @@
       <ul class="plugin-manage-groups-ul">
     {{else:}}
       {{li1 = li2 = ''}}
+      <p>
     {{pass}}
     {{for user in users:}}
       {{if not user.is_member:}}
@@ -54,6 +70,8 @@
     {{pass}}
     {{if li1:}}
       </ul>
+    {{else:}}
+      </p>
     {{pass}}
   {{pass}}
 {{else:}}

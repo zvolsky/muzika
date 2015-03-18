@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-plugin_manage_groups_LIMIT_HIDE_USERS = 3
-plugin_manage_groups_LIMIT_DENSE_ROWS = 2
+plugin_manage_groups_LIMIT_HIDE_USERS = 61
+plugin_manage_groups_LIMIT_DENSE_ROWS = 11
 
 plugin_manage_groups_table_user = auth.table_user()
 plugin_manage_groups_table_group = auth.table_group()
@@ -15,6 +15,7 @@ def index():
 @auth.requires_membership(plugin_manage_groups_ADMIN_GROUP)
 def group():
     if 1<=len(request.args)<=2:   # 2 reserved for description
+        hint = None
         groups = db(plugin_manage_groups_table_group.role==request.args[0]).select()
         if groups:
             group_id = groups.first().id
@@ -22,7 +23,7 @@ def group():
             group_id = plugin_manage_groups_table_group.insert(role=request.args[0])
             db.commit()
 
-        groups = db(plugin_manage_groups_table_group).select(orderby=plugin_manage_groups_table_group.role)
+        groups = db(plugin_manage_groups_table_group).select(orderby=plugin_manage_groups_table_group.role.lower())
         member_counts = {}
         count = plugin_manage_groups_table_membership.group_id.count()
         member_counts_db = db(plugin_manage_groups_table_membership).select(
@@ -33,18 +34,20 @@ def group():
         for membership in member_counts_db:
             member_counts[membership.auth_membership.group_id] = membership[count]
 
-        order_users = plugin_manage_groups_table_user.username if auth.settings.use_username else plugin_manage_groups_table_user.email
+        order_users = plugin_manage_groups_table_user.username.lower() if auth.settings.use_username else plugin_manage_groups_table_user.email.lower()
         users = db(plugin_manage_groups_table_user).select(orderby=order_users, limitby=(0, plugin_manage_groups_LIMIT_HIDE_USERS))
         member_fields = [plugin_manage_groups_table_user.username, plugin_manage_groups_table_user.email] if auth.settings.use_username else [plugin_manage_groups_table_user.email]
         members = db((plugin_manage_groups_table_membership.group_id==group_id) & (plugin_manage_groups_table_user.id==plugin_manage_groups_table_membership.user_id)).select(
                 plugin_manage_groups_table_user.id, *member_fields, orderby=order_users)
         if len(users)>=plugin_manage_groups_LIMIT_HIDE_USERS:
             large = SQLFORM.factory(
-                    Field('candidate', label=(T("User") if auth.settings.use_username else T("E-mail"))),
+                    Field('candidate', label=(T("User") if auth.settings.use_username else T("E-mail")),
+                            comment=(T("enter username or email (exact or starting characters)") if auth.settings.use_username
+                                else T("enter email or its starting characters"))),
                     submit_button=T("Find and add the user"))
-            if large.process().accepted:
-                if form.vars.candidate:
-                    pattern = form.vars.candidate.lower()
+            if large.process(keepvalues=True).accepted:
+                if large.vars.candidate:
+                    pattern = large.vars.candidate.lower()
                     new_member = db(plugin_manage_groups_table_user.email.lower()==pattern).select().first() if ('@' in pattern) else None
                     if not new_member:
                         if auth.settings.use_username:
@@ -58,12 +61,18 @@ def group():
                             if len(candidates)==1:
                                 new_member = first_candidate
                             else:
-                                session.flash = T("Ambiguous candidate user.")
+                                response.flash = T("Ambiguous candidate user, choose one from the hint ('Did you mean?').")
+                                hint = candidates
                         else:
                             session.flash = T("Cannot find the user.")
                     if new_member:
-                        __addms(group_id, new_member.id)
-                redirect(URL(args=request.args)) # re-read
+                        new_info = new_member.username if auth.settings.use_username else new_member.email
+                        if __addms(group_id, new_member.id):
+                            session.flash = T("User %s was added.") % new_info
+                        else:
+                            session.flash = T("User %s is already a member.") % new_info
+                if not hint:
+                    redirect(URL(args=request.args)) # re-read
             cnt_candidates = 'many' # must be non empty
         else:
             large = None
@@ -80,7 +89,8 @@ def group():
 
         return {'groups': groups, 'member_counts': member_counts, 'users': users, 'members': members,
                 'large': large, 'limit_dense': plugin_manage_groups_LIMIT_DENSE_ROWS, 'cnt_candidates': cnt_candidates,
-                'group_id': group_id, 'manage_me': request.args[0]!=plugin_manage_groups_ADMIN_GROUP}
+                'group_id': group_id, 'manage_me': request.args[0]!=plugin_manage_groups_ADMIN_GROUP,
+                'hint': hint}
     else:
         return T('use syntax: plugin_manage_groups/group/<groupname>')
 
@@ -103,6 +113,9 @@ def addms():
 def __addms(group_id, user_id):
     if not db((plugin_manage_groups_table_membership.group_id==group_id) & (plugin_manage_groups_table_membership.user_id==user_id)).select():
         plugin_manage_groups_table_membership.insert(group_id=group_id, user_id=user_id)
+        return True
+    else:
+        return False
 
 @auth.requires_membership(plugin_manage_groups_ADMIN_GROUP)
 def delms():
