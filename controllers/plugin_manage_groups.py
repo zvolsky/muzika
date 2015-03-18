@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-plugin_manage_groups_LIMIT_HIDE_USERS = 251
-plugin_manage_groups_LIMIT_DENSE_ROWS = 11
+plugin_manage_groups_LIMIT_HIDE_USERS = 3
+plugin_manage_groups_LIMIT_DENSE_ROWS = 2
 
 plugin_manage_groups_table_user = auth.table_user()
 plugin_manage_groups_table_group = auth.table_group()
@@ -39,9 +39,30 @@ def group():
         members = db((plugin_manage_groups_table_membership.group_id==group_id) & (plugin_manage_groups_table_user.id==plugin_manage_groups_table_membership.user_id)).select(
                 plugin_manage_groups_table_user.id, *member_fields, orderby=order_users)
         if len(users)>=plugin_manage_groups_LIMIT_HIDE_USERS:
-            large = SQLFORM.factory(Field('candidate'), label=T("Add user:"))
+            large = SQLFORM.factory(
+                    Field('candidate', label=(T("User") if auth.settings.use_username else T("E-mail"))),
+                    submit_button=T("Find and add the user"))
             if large.process().accepted:
-                session.flash(T("Cannot find the user."))
+                if form.vars.candidate:
+                    pattern = form.vars.candidate.lower()
+                    new_member = db(plugin_manage_groups_table_user.email.lower()==pattern).select().first() if ('@' in pattern) else None
+                    if not new_member:
+                        if auth.settings.use_username:
+                            new_member = db(plugin_manage_groups_table_user.username.lower()==pattern).select().first()
+                    if not new_member:
+                        candidates = db(plugin_manage_groups_table_user.email.lower().like(pattern+'%')).select()
+                        if auth.settings.use_username:
+                            candidates = candidates | db(plugin_manage_groups_table_user.username.lower().like(pattern+'%')).select()
+                        first_candidate = candidates.first()
+                        if first_candidate:
+                            if len(candidates)==1:
+                                new_member = first_candidate
+                            else:
+                                session.flash = T("Ambiguous candidate user.")
+                        else:
+                            session.flash = T("Cannot find the user.")
+                    if new_member:
+                        __addms(group_id, new_member.id)
                 redirect(URL(args=request.args)) # re-read
             cnt_candidates = 'many' # must be non empty
         else:
@@ -75,9 +96,13 @@ def delgroup():
 
 @auth.requires_membership(plugin_manage_groups_ADMIN_GROUP)
 def addms():
-    if len(request.args)==2 and not db((plugin_manage_groups_table_membership.group_id==request.args[0]) & (plugin_manage_groups_table_membership.user_id==request.args[1])).select():
-        plugin_manage_groups_table_membership.insert(group_id=request.args[0], user_id=request.args[1])
+    if len(request.args)==2:
+        __addms(request.args[0], request.args[1])
     __reload_group(request.args[0])
+
+def __addms(group_id, user_id):
+    if not db((plugin_manage_groups_table_membership.group_id==group_id) & (plugin_manage_groups_table_membership.user_id==user_id)).select():
+        plugin_manage_groups_table_membership.insert(group_id=group_id, user_id=user_id)
 
 @auth.requires_membership(plugin_manage_groups_ADMIN_GROUP)
 def delms():
