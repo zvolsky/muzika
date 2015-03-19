@@ -97,4 +97,6 @@
 {{pass}}
 </ul>
 
-<p class="plugin-manage-groups-hint">{{=T("To create new group, please navigate to %s/plugin_manage_groups/group/<new_group_name>.") % request.application}}</p>
+{{if plugins.manage_groups.create:}}
+  <p class="plugin-manage-groups-hint">{{=T("To create new group, please navigate to %s/plugin_manage_groups/group/<new_group_name>.") % request.application}}</p>
+{{pass}}

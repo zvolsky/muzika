@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import locale
+locale.setlocale(locale.LC_ALL, 'cs_CZ.UTF-8')
+
 db.define_table('misto',
     Field('misto', length=50),
     format = '%(misto)s (%(id)s)'
